@@ -1,0 +1,40 @@
+# Compiled object files and binaries
+*.o
+*.obj
+*.so
+*.exe
+*.dll
+*.out
+*.app
+
+# Build directories
+build/
+cmake-build-*/
+
+# VS Code settings
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Package managers
+node_modules/
+*.log
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Generated documentation
+docs/
+
+# IDE files
+*.idea/
+*.sublime-project
+*.sublime-workspace
