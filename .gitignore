@@ -38,3 +38,5 @@ docs/
 *.idea/
 *.sublime-project
 *.sublime-workspace
+
+external/
