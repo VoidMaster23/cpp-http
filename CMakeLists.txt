@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)
 project(cpp_httplib_dev)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Include FetchContent module
 include(FetchContent)
@@ -20,18 +21,13 @@ FetchContent_Declare(
 )
 
 # Declare and fetch nlohmann/json
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG        v3.11.3 # or specify a commit hash or tag
-    SOURCE_SUBDIR "non_existent_directory"  # Prevent building tests/examples
-)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 
 # Fetch the declared content
-FetchContent_MakeAvailable(cpp_httplib nlohmann_json)
+FetchContent_MakeAvailable(cpp_httplib json)
 
 # Define source directories
-set(SOURCE_DIRS controllers utils tests)
+set(SOURCE_DIRS models utils tests)
 
 # Initialize an empty list for source files
 set(SOURCES main.cpp)
@@ -52,7 +48,7 @@ endforeach()
 
 # Include the external directory
 target_include_directories(server PRIVATE ${FETCHCONTENT_BASE_DIR}/cpp_httplib-src)
-target_include_directories(server PRIVATE ${FETCHCONTENT_BASE_DIR}/nlohmann_json-src)
 
 find_package(Threads REQUIRED)
 target_link_libraries(server PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(server PRIVATE nlohmann_json::nlohmann_json)
