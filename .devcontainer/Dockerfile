@@ -27,7 +27,7 @@ RUN curl -OL https://github.com/mongodb/mongo-cxx-driver/releases/download/r4.0.
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_STANDARD=20 && \
     cmake --build . && \
-    cmake --install .
+    sudo cmake --build . --target install
 
 WORKDIR /workspace
 
