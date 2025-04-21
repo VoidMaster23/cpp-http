@@ -24,21 +24,36 @@ int main(void) {
     auto body_raw = req.body;
     const json body_json = json::parse(body_raw);
 
-    models::client::signup::SignUpRequestBody body =
-        models::deserialize<models::client::signup::SignUpRequestBody>(
-            body_json);
+    models::client::auth0::signup::request::RequestBody body =
+        models::deserialize<
+            models::client::auth0::signup::request::RequestBody>(body_json);
     json clientRequestBody =
-        models::serialize<models::client::signup::SignUpRequestBody>(body);
+        models::serialize<models::client::auth0::signup::request::RequestBody>(
+            body);
 
     auto response = client.Post("/dbconnections/signup",
                                 clientRequestBody.dump(), "application/json");
 
     if (response) {
-      std::cout << body.user_name << std::endl;
+      const int status = response.value().status;
+      json body = json::parse(response.value().body);
+      res.status = status;
+
+      if (status != httplib::StatusCode::OK_200) {
+        // maybe have an error middleware?
+        res.set_content(body.dump(), "application/json");
+        return;
+      }
+
+      // success
+      auto user_auth = models::deserialize<
+          models::client::auth0::signup::response::ResponseBody>(body);
+
+      res.set_content(body.dump(), "text/json");
 
     } else {
       res.status = httplib::StatusCode::InternalServerError_500;
-      json response_body ;
+      json response_body;
       response_body["message"] = response.error();
       res.set_content(response_body.dump(), "application/json");
     }

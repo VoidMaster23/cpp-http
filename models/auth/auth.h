@@ -6,26 +6,19 @@ using json = nlohmann::json;
 #include "modelBase.h"
 
 namespace models {
+
 // ================== request body ===================
 namespace server {
 namespace signup {
 
 struct SignUpBody {
-  std::string user_name;
+  std::string username;
   std::string password;
   std::string email;
 };
 
-void to_json(json &j, const SignUpBody &s) {
-  j = json{
-      {"username", s.user_name}, {"password", s.password}, {"email", s.email}};
-}
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SignUpBody, username, password, email)
 
-void from_json(const json &j, SignUpBody &s) {
-  j.at("username").get_to(s.user_name);
-  j.at("password").get_to(s.password);
-  j.at("email").get_to(s.email);
-}
 }  // namespace signup
 }  // namespace server
 
@@ -33,25 +26,40 @@ void from_json(const json &j, SignUpBody &s) {
 
 // ==================== CLIENT
 namespace client {
-namespace signup {
 
-struct SignUpRequestBody : public server::signup::SignUpBody {
+namespace auth0 {
+namespace signup {
+namespace request {
+
+struct RequestBody : public server::signup::SignUpBody {
   std::string connection_id{"Username-Password-Authentication"};
   std::string client_id{"YdFzpiOcmSQsx5cA3b2cmStikN5HErb2"};
 };
 
-void to_json(json &j, const SignUpRequestBody &s) {
-  server::signup::to_json(j,
-                          static_cast<const server::signup::SignUpBody &>(s));
-
+inline void to_json(json &j, const RequestBody &s) {
+  j = static_cast<json>(static_cast<const server::signup::SignUpBody &>(s));
   j["connection"] = s.connection_id;
   j["client_id"] = s.client_id;
 }
 
-void from_json(const json &j, SignUpRequestBody &s) {
-  from_json(j, static_cast<server::signup::SignUpBody &>(s));
+inline void from_json(const json &j, RequestBody &s) {
+  j.get_to<server::signup::SignUpBody>(s);  // parse base
 }
+}  // namespace request
+
+namespace response {
+struct ResponseBody {
+  std::string _id;
+  bool email_verified;
+  std::string email;
+  std::string username;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ResponseBody, _id, email, username , email_verified)
+}  // namespace response
+
 }  // namespace signup
+}  // namespace auth0
 
 }  // namespace client
 
