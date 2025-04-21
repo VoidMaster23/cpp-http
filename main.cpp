@@ -1,4 +1,5 @@
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include <stdio.h>  // TODO: some setup for using modules
 
 #include <nlohmann/json.hpp>
@@ -16,19 +17,33 @@ int main(void) {
   });
 
   server.Post("/", [](const httplib::Request &req, httplib::Response &res) {
-    // TODO: abstract the fuck out of this
-    // TODO: think about how best to abstract this, thinking a middleware but
-    // idk bro, this is also the first one so I'll see how it goes
+    // handling client generatiion -> maybe ddoing that on a middleware layer
+    httplib::Client client("https://dev-0nrio8oxyp8m8ddg.us.auth0.com");
+
+    // Implement middleware such that this can be passed on
     auto body_raw = req.body;
     const json body_json = json::parse(body_raw);
 
-    models::SignUpBody body = models::deserialize<models::SignUpBody>(body_json);
+    models::client::signup::SignUpRequestBody body =
+        models::deserialize<models::client::signup::SignUpRequestBody>(
+            body_json);
+    json clientRequestBody =
+        models::serialize<models::client::signup::SignUpRequestBody>(body);
 
-    std::cout << body.user_name << std::endl;
+    auto response = client.Post("/dbconnections/signup",
+                                clientRequestBody.dump(), "application/json");
 
-    json response = {{"message", "ok"}};
+    if (response) {
+      std::cout << body.user_name << std::endl;
 
-    res.set_content(response.dump(), "text/json");
+    } else {
+      res.status = httplib::StatusCode::InternalServerError_500;
+      json response_body ;
+      response_body["message"] = response.error();
+      res.set_content(response_body.dump(), "application/json");
+    }
+
+    // res.set_content(, "text/json");
   });
 
   server.listen("0.0.0.0", 8080);
