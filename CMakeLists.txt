@@ -27,7 +27,7 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(cpp_httplib json)
 
 # Define source directories
-set(SOURCE_DIRS models utils tests)
+set(SOURCE_DIRS models handlers tests)
 
 # Initialize an empty list for source files
 set(SOURCES main.cpp)
@@ -50,5 +50,7 @@ endforeach()
 target_include_directories(server PRIVATE ${FETCHCONTENT_BASE_DIR}/cpp_httplib-src)
 
 find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
 target_link_libraries(server PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(server PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(server PRIVATE OpenSSL::SSL OpenSSL::Crypto)

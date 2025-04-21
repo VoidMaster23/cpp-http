@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:1-debian-11
+FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
 
 ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 
@@ -8,22 +8,22 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     astyle \
     python3 \
     python3-pip \
-    && rm -rf /var/lib/apt/lists/* 
-
-
-RUN pip3 install cpplint
+    python3-venv \
+    python3-setuptools \
+    openssl \
+    libssl-dev \
+    cpplint \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
 
 COPY . .
 
-RUN ls
-
 RUN mkdir -p build
 
 RUN cmake -S . -B build \
-    && cmake --build build
-
-
+  -DOPENSSL_ROOT_DIR=/usr \
+  -DOPENSSL_LIBRARIES=/usr/lib/x86_64-linux-gnu \
+  && cmake --build build
 
 
