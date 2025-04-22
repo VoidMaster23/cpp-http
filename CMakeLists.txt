@@ -5,6 +5,7 @@ project(cpp_httplib_dev)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_INSTALL_RPATH "/usr/local/lib")
 
 # Include FetchContent module
 include(FetchContent)
@@ -49,8 +50,28 @@ endforeach()
 # Include the external directory
 target_include_directories(server PRIVATE ${FETCHCONTENT_BASE_DIR}/cpp_httplib-src)
 
+set(CMAKE_PREFIX_PATH "/usr/local/lib/cmake")
+
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(bsoncxx REQUIRED)
+find_package(mongocxx REQUIRED)
+
+include_directories(${MONGOCXX_LIBRARIES})
+include_directories(${BSONCXX_LIBRARIES})
+include_directories(${MONGOCXX_INCLUDE_DIRS})
+include_directories(${BSONCXX_INCLUDE_DIRS})
+
+include_directories("/usr/local/include/mongocxx/v_noabi")
+include_directories("/usr/local/include/bsoncxx/v_noabi")
+include_directories("/usr/local/include/libmongoc-1.0")
+include_directories("/usr/local/include/libbson-1.0")
+include_directories("/usr/local/lib")
+
+target_link_options(server PRIVATE "-Wl,-rpath,/usr/local/lib")
+
 target_link_libraries(server PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(server PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(server PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(server PRIVATE mongo::mongocxx_shared)
+target_link_libraries(server PRIVATE mongo::bsoncxx_shared)

@@ -15,12 +15,6 @@ using json = nlohmann::json;
 
 int main(void) {
   httplib::Server server;
-  mongocxx::instance inst{};
-
-  const auto uri = mongocxx::uri{
-      "mongodb+srv://"
-      "edsonshivuri:7UgntlDCyRsn7ob4@cluster0.ljbvmqh.mongodb.net/"
-      "?retryWrites=true&w=majority&appName=Cluster0"};
 
   try {
     // Create an instance.
