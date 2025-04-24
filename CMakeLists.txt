@@ -28,7 +28,7 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(cpp_httplib json)
 
 # Define source directories
-set(SOURCE_DIRS models handlers tests)
+set(SOURCE_DIRS models handlers utils)
 
 # Initialize an empty list for source files
 set(SOURCES main.cpp)
