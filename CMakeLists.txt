@@ -17,18 +17,25 @@ set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external")
 FetchContent_Declare(
     cpp_httplib
     GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG        v0.20.0  # or specify a commit hash or tag
-    SOURCE_SUBDIR "non_existent_directory"  # Prevent building tests/examples
+    GIT_TAG v0.20.0 # or specify a commit hash or tag
+    SOURCE_SUBDIR "non_existent_directory" # Prevent building tests/examples
+)
+
+# Declate and fetch bcrypt
+FetchContent_Declare(
+    bcrypt
+    GIT_REPOSITORY https://github.com/trusch/libbcrypt.git
+    GIT_TAG master # Or specific commit hash/tag
 )
 
 # Declare and fetch nlohmann/json
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 
 # Fetch the declared content
-FetchContent_MakeAvailable(cpp_httplib json)
+FetchContent_MakeAvailable(cpp_httplib json bcrypt)
 
 # Define source directories
-set(SOURCE_DIRS models handlers utils)
+set(SOURCE_DIRS models handlers utils services)
 
 # Initialize an empty list for source files
 set(SOURCES main.cpp)
@@ -70,8 +77,11 @@ include_directories("/usr/local/lib")
 
 target_link_options(server PRIVATE "-Wl,-rpath,/usr/local/lib")
 
+target_include_directories(server PRIVATE ${bcrypt_SOURCE_DIR}/include)
+
 target_link_libraries(server PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(server PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(server PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(server PRIVATE bcrypt)
 target_link_libraries(server PRIVATE mongo::mongocxx_shared)
 target_link_libraries(server PRIVATE mongo::bsoncxx_shared)
