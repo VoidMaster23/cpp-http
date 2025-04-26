@@ -45,6 +45,7 @@
 				"ms-vscode.cpptools-extension-pack",
 				"ms-azuretools.vscode-docker",
 				"cpplint.vscode-cpptools",
+				"kylinideteam.cmake-intellisence"
 			],
 		}
 	},
