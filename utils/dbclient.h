@@ -6,6 +6,7 @@
 #include "singleton.h"
 
 namespace utils {
+static const std::string DB_NAME{"testdb"};
 
 class MongoPool {
  public:
