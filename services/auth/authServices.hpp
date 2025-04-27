@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <string>
+#include <stdio.h>
 
 #include "auth/auth.h"
 #include "bcrypt/BCrypt.hpp"
@@ -110,6 +111,8 @@ void handle_sign_up(const models::auth::SignUpRequestBody body) {
         models::serialize<models::auth::SignUpRequestBody>(user_account);
 
     collection.insert_one(bsoncxx::from_json(values.dump()));
+  } else {
+    std::cout << "NAH BRO HE EXISTS" << std::endl;
   }
 
   // todo: handle error

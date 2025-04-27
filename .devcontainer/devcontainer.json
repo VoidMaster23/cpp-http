@@ -15,7 +15,8 @@
 				"C_Cpp.intelliSenseEngine": "default",
 				"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 				"C_Cpp.default.cppStandard": "c++20",
-				"includePath": [
+				"C_Cpp.default.includePath": [
+					"/usr/local/include/",
 					"/usr/local/include/mongocxx/v_noabi",
 					"/usr/local/include/bsoncxx/v_noabi",
 					"/usr/include",
@@ -50,6 +51,9 @@
 		}
 	},
 	"workspaceFolder": "/workspace",
+	"mounts": [
+		"source=${localWorkspaceFolder},target=/workspace,type=bind"
+	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
