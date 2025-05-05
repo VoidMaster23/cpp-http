@@ -5,59 +5,68 @@ project(cpp_httplib_dev)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_INSTALL_RPATH "/usr/local/lib")
 
-# Include FetchContent module
+# Include FetchContent
 include(FetchContent)
 
-# Define the external directory within the source tree
+# Set custom base dir for FetchContent
 set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external")
 
-# Declare and fetch cpp-httplib
+# ----------- External Dependencies ------------
+
+# cpp-httplib (header-only)
 FetchContent_Declare(
     cpp_httplib
     GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG v0.20.0 # or specify a commit hash or tag
-    SOURCE_SUBDIR "non_existent_directory" # Prevent building tests/examples
+    GIT_TAG v0.20.0
+    SOURCE_SUBDIR "non_existent_directory"  # prevents auto CMakeLists
 )
 
-# Declate and fetch bcrypt
+# bcrypt
 FetchContent_Declare(
     bcrypt
     GIT_REPOSITORY https://github.com/trusch/libbcrypt.git
-    GIT_TAG master # Or specific commit hash/tag
+    GIT_TAG master
 )
 
-# Declare and fetch nlohmann/json
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+# jwt-cpp
+FetchContent_Declare(
+    jwt_cpp
+    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
+    GIT_TAG master
+)
 
-# Fetch the declared content
-FetchContent_MakeAvailable(cpp_httplib json bcrypt)
+# Fetch all above
+FetchContent_MakeAvailable(cpp_httplib bcrypt jwt_cpp)
 
-# Define source directories
+# nlohmann_json should be installed system-wide
+find_package(nlohmann_json 3.12.0 REQUIRED)
+
+# ----------- Source Files ------------
+
 set(SOURCE_DIRS models handlers utils services)
 
-# Initialize an empty list for source files
 set(SOURCES main.cpp)
-
-# Loop through each source directory and collect all .cpp files
 foreach(dir ${SOURCE_DIRS})
     file(GLOB_RECURSE ${dir}_sources ${dir}/*.cpp)
     list(APPEND SOURCES ${${dir}_sources})
 endforeach()
 
-# Add the executable with all source files
 add_executable(server ${SOURCES})
 
-# Include directories
+# ----------- Include Paths ------------
+set(CMAKE_PREFIX_PATH "/usr/local/lib/cmake")
+
 foreach(dir ${SOURCE_DIRS})
     target_include_directories(server PRIVATE ${CMAKE_SOURCE_DIR}/${dir})
 endforeach()
 
-# Include the external directory
-target_include_directories(server PRIVATE ${FETCHCONTENT_BASE_DIR}/cpp_httplib-src)
-
-set(CMAKE_PREFIX_PATH "/usr/local/lib/cmake")
+target_include_directories(server PRIVATE
+    ${FETCHCONTENT_BASE_DIR}/cpp_httplib-src
+    ${bcrypt_SOURCE_DIR}/include
+    ${jwt_cpp_SOURCE_DIR}/include
+)
+# ----------- Find & Link Libraries ------------
 
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -77,11 +86,14 @@ include_directories("/usr/local/lib")
 
 target_link_options(server PRIVATE "-Wl,-rpath,/usr/local/lib")
 
-target_include_directories(server PRIVATE ${bcrypt_SOURCE_DIR}/include)
-
-target_link_libraries(server PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(server PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(server PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-target_link_libraries(server PRIVATE bcrypt)
-target_link_libraries(server PRIVATE mongo::mongocxx_shared)
-target_link_libraries(server PRIVATE mongo::bsoncxx_shared)
+target_link_libraries(server
+    PRIVATE
+        ${CMAKE_THREAD_LIBS_INIT}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        bcrypt
+        mongo::mongocxx_shared
+        mongo::bsoncxx_shared
+    PUBLIC
+        nlohmann_json::nlohmann_json
+)

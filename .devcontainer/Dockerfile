@@ -36,6 +36,16 @@ RUN wget https://github.com/mongodb/mongo-cxx-driver/releases/download/r4.0.0/mo
     rm mongo-cxx-driver-r4.0.0.tar.gz && \
     rm -rf mongo-cxx-driver-r4.0.0
 
+RUN wget https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz && \
+    tar -xzf v3.12.0.tar.gz && \
+    cd json-3.12.0 && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make && \
+    make install && \
+    cd ../.. && \
+    rm -rf json-3.12.0 v3.12.0.tar.gz
+
 WORKDIR /workspace
 
 COPY . .
