@@ -1,22 +1,35 @@
 
 #pragma once
+#include <jwt-cpp/jwt.h>
+#include <stdio.h>
+
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
+#include <mongocxx/exception/bulk_write_exception.hpp>
+#include <mongocxx/exception/error_code.hpp>
+#include <mongocxx/exception/logic_error.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/exception/server_error_code.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/pool.hpp>
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <string>
-#include <stdio.h>
+#include <tuple>
 
 #include "auth/auth.h"
 #include "bcrypt/BCrypt.hpp"
 #include "dbclient.h"
+#include "jwt-cpp/traits/nlohmann-json/traits.h"
 using json = nlohmann::json;
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_array;
 using bsoncxx::builder::basic::make_document;
+using traits = jwt::traits::nlohmann_json;
+using claim = jwt::basic_claim<traits>;
+using sec = std::chrono::seconds;
+using min = std::chrono::minutes;
 
 namespace services {
 namespace auth {
@@ -92,7 +105,8 @@ const std::string generate_password_hash(const std::string& password) {
 //   }
 
 // at this point assume that everything is valid
-void handle_sign_up(const models::auth::SignUpRequestBody body) {
+std::tuple<json, std::optional<json>> handle_sign_up(
+    const models::auth::SignUpRequestBody body) {
   const std::string password_hash{generate_password_hash(body.password)};
 
   const models::auth::SignUpRequestBody user_account{
@@ -100,22 +114,74 @@ void handle_sign_up(const models::auth::SignUpRequestBody body) {
       .password = password_hash,
       .email = body.email};
 
-  auto collection = get_collection(CollectionType::Account);
+  std::optional<mongocxx::v_noabi::result::insert_one> result;
 
-  auto existing_record =
-      collection.find_one(make_document(kvp("user_name", body.user_name)));
+  // maybe have error middleware?
+  // or maybe just pass the result object here idk
+  try {
+    auto account_collection = get_collection(CollectionType::Account);
+    auto profile_collection = get_collection(CollectionType::User);
 
-  // handle what happens when we exist
-  if (!existing_record) {
-    json values =
-        models::serialize<models::auth::SignUpRequestBody>(user_account);
+    auto existing_record = account_collection.find_one(
+        make_document(kvp("user_name", body.user_name)));
 
-    collection.insert_one(bsoncxx::from_json(values.dump()));
-  } else {
-    std::cout << "NAH BRO HE EXISTS" << std::endl;
+    if (!existing_record) {
+      json values =
+          models::serialize<models::auth::SignUpRequestBody>(user_account);
+
+      result = account_collection.insert_one(bsoncxx::from_json(values.dump()));
+
+      profile_collection.insert_one(
+          make_document(kvp("_id", result->inserted_id().get_oid().value)));
+    } else {
+      std::cout << "NAH BRO HE EXISTS" << std::endl;
+      return std::make_tuple(
+          json{}, json{{"error", "User already exists"}, {"code", 400}});
+    }
+  } catch (const std::exception& e) {
+    std::cout << "ERROR WHEN ADDING A USER: " << e.what() << std::endl;
+    return std::make_tuple(
+        json{}, json{{"error", "Internal server error"}, {"code", 500}});
   }
 
-  // todo: handle error
+  if (result && result->result().inserted_count() == 1) {
+    const auto time = jwt::date::clock::now();
+    auto access_token =
+        jwt::create<traits>()
+            .set_type("JWT")
+            .set_issuer("auth.dummy_project")
+            .set_audience("dummy_project")
+            .set_issued_at(time)
+            .set_not_before(time)
+            .set_expires_at(time + sec{3600})
+            .set_payload_claim(
+                "id", claim(result->inserted_id().get_oid().value.to_string()))
+            .sign(jwt::algorithm::none{});
+
+    // TODO: store JTI claim in db and properly genenrate it with uuid
+
+    auto refresh_token =
+        jwt::create<traits>()
+            .set_type("JWT")
+            .set_issuer("auth.dummy_project")
+            .set_audience("dummy_project")
+            .set_issued_at(time)
+            .set_not_before(time)
+            .set_expires_at(time + min{10080})
+            .set_payload_claim(
+                "id", claim(result->inserted_id().get_oid().value.to_string()))
+            .set_payload_claim("jti", claim(std::string("fhqweruifqowefhoqwe")))
+            .sign(jwt::algorithm::none{});
+
+    bsoncxx::oid inserted_id = result->inserted_id().get_oid().value;
+    return {json{{"userId", inserted_id.to_string()},
+                 {"access_token", access_token},
+                 {"refresh_token", refresh_token}},
+            std::nullopt};
+  }
+
+  return std::make_tuple(json{},
+                         json{{"error", "Insert failed"}, {"code", 500}});
 }
 
 }  // namespace auth

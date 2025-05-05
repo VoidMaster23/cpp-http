@@ -56,9 +56,17 @@ int main(void) {
       res.set_content(message, "application/json");
     }
 
-    services::auth::handle_sign_up(body);
+    auto [result, err] =  services::auth::handle_sign_up(body);
 
-    res.set_content("ok", "text/json");
+    if(err.has_value()) {
+      res.status = httplib::InternalServerError_500;
+      res.set_content(err.value().dump(), "text/json");
+    } else {
+      res.set_content(result.dump(), "text/json");
+
+    }
+
+
   });
 
   server.listen("0.0.0.0", 8080);
