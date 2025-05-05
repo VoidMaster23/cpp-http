@@ -26,3 +26,13 @@ This is a C++20 project template that includes:
    ```bash
    git clone https://github.com/yourusername/cpp_project_template.git
    cd cpp_project_template
+
+#High-level to-dos
+1. Implement login 
+2. verify tokens
+3. log out 
+4. handle revoking tokens 
+5. implement middleware
+6. refacotr auth logic to work with middleware for token verification and error handling
+7. logging
+8. adjust dockerfile to run server immediately on deployed env
